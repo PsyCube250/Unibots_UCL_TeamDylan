@@ -12,15 +12,15 @@ This repository contains the full stack for a mobile robot designed for autonomo
 
 | Component | Function |
 | :--- | :--- |
-| **Jetson Orin Nano** | Main compute unit; runs ROS 2, handles high-level SLAM, and processes vision/sensor data. |
+| **Jetson Orin Nano** | Main compute unit; runs ROS 2, handles Object Detection and Lidar, and processes vision/sensor data. |
 | **Arduino Uno R4 WiFi** | Microcontroller for low-level motor control via serial communication. |
+| **HW-627 Motor Driver** | Manages power distribution and control signals to the motors. |
 | **STL27L 360° LiDAR** | Provides 2D point cloud data for real-time SLAM and obstacle detection. |
 | **Pi Cam** | Captures visual data for object recognition and environment monitoring. |
 | **4× Geared Metal Motors** | Provides locomotion, equipped with encoders for precise odometry and movement feedback. |
-| **HW-627 Motor Driver** | Manages power distribution and control signals to the motors. |
 
 ## Core Capabilities
 
 * **Sensor Fusion:** Combines LiDAR odometry, visual data, and wheel encoder feedback for robust state estimation.
-* **Real-Time SLAM:** Simultaneous Localization and Mapping using 360° spatial data.
+* **Real-Time Detection and Actuation:** Simultaneous Localization and Mapping using 360° spatial data.
 * **Modular ROS 2 Stack:** Designed using ROS 2 nodes for decoupled, scalable hardware and software integration.
