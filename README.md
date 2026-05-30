@@ -13,7 +13,7 @@ This repository contains the full stack for a mobile robot designed for autonomo
 | Component | Function |
 | :--- | :--- |
 | **Jetson Orin Nano** | Main compute unit; runs ROS 2, handles Object Detection and Lidar, and processes vision/sensor data. |
-| **ESP32** | Microcontroller for low-level motor control via serial communication. |
+| **STM32** | Microcontroller for low-level motor control via serial communication. |
 | **HW-627 Motor Driver** | Manages power distribution and control signals to the motors. |
 | **STL27L 360° LiDAR** | Provides 2D point cloud data for obstacle detection. |
 | **MPU6050** | Utilises the inbuilt gyroscope to measure rates of turning , paired with the Lidar to ensure orientation is known at all times |
