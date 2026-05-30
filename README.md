@@ -16,7 +16,7 @@ This repository contains the full stack for a mobile robot designed for autonomo
 | **STM32** | Microcontroller for low-level motor control via serial communication. |
 | **HW-627 Motor Driver** | Manages power distribution and control signals to the motors. |
 | **STL27L 360° LiDAR** | Provides 2D point cloud data for obstacle detection. |
-| **MPU6050** | Utilises the inbuilt gyroscope to measure rates of turning , paired with the Lidar to ensure orientation is known at all times |
+| **LSM6DSOXTR(Modulino Movement)** | Utilises the inbuilt gyroscope to measure rates of turning , paired with the Lidar to ensure orientation is known at all times |
 | **Pi Cam** | Captures visual data for object recognition and environment monitoring. |
 | **4× Geared Metal Motors** | Provides locomotion, equipped with encoders for precise odometry and movement feedback. |
 
