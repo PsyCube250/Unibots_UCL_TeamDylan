@@ -58,7 +58,7 @@ class LidarObstacleDetector(Node):
 
                 close_points.append({
                     'angle_deg': round(normalised, 1),
-                    'distance_cm': round(r * 100, 1)
+                    'distance_cm': round(float(r) * 100, 1)
                 })
 
         # Cluster by angle proximity
@@ -82,7 +82,7 @@ class LidarObstacleDetector(Node):
                     avg_angle = float(np.mean([p['angle_deg'] for p in cluster]))
                     obstacles.append({
                         'angle_deg': round(avg_angle, 1),
-                        'distance_cm': closest['distance_cm'],
+                        'distance_cm': float(closest['distance_cm']),
                         'point_count': len(cluster),
                         'side': 'left' if avg_angle < -5 else 'right' if avg_angle > 5 else 'center'
                     })
