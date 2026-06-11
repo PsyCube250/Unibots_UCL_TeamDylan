@@ -1,0 +1,18 @@
+# ROS build artifacts
+unibots_ws/build/
+unibots_ws/install/
+unibots_ws/log/
+
+# Model files
+*.pt
+*.engine
+*.onnx
+
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# Misc
+*.jpg
+*.png
