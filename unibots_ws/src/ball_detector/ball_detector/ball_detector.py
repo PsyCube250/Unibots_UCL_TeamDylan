@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
-from std_msgs.msg import String, Float32MultiArray
+from std_msgs.msg import String
 from cv_bridge import CvBridge
 from ultralytics import YOLO
 import json
@@ -25,7 +25,7 @@ class BallDetector(Node):
             10)
 
         self.detection_pub = self.create_publisher(String, '/ball_detections', 10)
-        self.navigate_pub = self.create_publisher(Float32MultiArray, '/ball_navigate', 10)
+        self.navigate_pub = self.create_publisher(String, '/ball_navigate', 10)
 
         self.bridge = CvBridge()
         self.target_class = 32
@@ -113,10 +113,13 @@ class BallDetector(Node):
                 self.get_logger().info(
                     f'Cluster: {count} ball(s) | Angle: {angle:.1f}° | Distance: {distance:.1f}cm'
                 )
-                nav_msg = Float32MultiArray()
-                nav_msg.data = [angle, distance, float(count)]
+                nav_msg = String()
+                nav_msg.data = json.dumps({
+                    'angle': round(angle, 1),
+                    'distance_cm': round(distance, 1),
+                    'count': count
+                })
                 self.navigate_pub.publish(nav_msg)
-
 
 def main(args=None):
     rclpy.init(args=args)
@@ -128,7 +131,6 @@ def main(args=None):
     finally:
         node.destroy_node()
         rclpy.shutdown()
-
 
 if __name__ == '__main__':
     main()
