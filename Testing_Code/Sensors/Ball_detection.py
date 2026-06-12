@@ -2,7 +2,7 @@ import cv2 as cv
 from ultralytics import YOLO
 import time
 
-model = YOLO("yolo26x.pt") 
+model = YOLO("yolo26n.pt") 
 target_classes = 32
 
 cap = cv.VideoCapture(0, cv.CAP_V4L2)
