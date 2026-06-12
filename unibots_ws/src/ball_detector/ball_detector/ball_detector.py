@@ -9,10 +9,10 @@ import time
 import numpy as np
 
 # Camera constants
-FOCAL_LENGTH = 516.0
+FOCAL_LENGTH = 500.0
 BALL_DIAMETER_CM = 4.0
-IMAGE_WIDTH = 320
-IMAGE_HEIGHT = 320
+IMAGE_WIDTH = 1280
+IMAGE_HEIGHT = 720
 
 class BallDetector(Node):
     def __init__(self):
@@ -54,7 +54,7 @@ class BallDetector(Node):
     def estimate_angle(self, box):
         cx = (box[0] + box[2]) / 2.0
         offset = cx - (IMAGE_WIDTH / 2.0)
-        return float(np.degrees(np.arctan(offset / FOCAL_LENGTH))-17.5)
+        return float(np.degrees(np.arctan(offset / FOCAL_LENGTH)))
 
     def find_closest_cluster(self, boxes):
         if not boxes:
@@ -83,7 +83,7 @@ class BallDetector(Node):
             device='cuda',
             half=True,
             classes=[self.target_class],
-            conf=0.01,
+            conf=0.002,
             imgsz=320,
             stream=True
         )
