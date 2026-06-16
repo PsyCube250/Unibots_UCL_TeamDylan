@@ -6,7 +6,7 @@ import serial
 import time
 import random
 
-SERIAL_PORT = '/dev/ttyTHS0'
+SERIAL_PORT = '/dev/ttyTHS1'
 BAUD_RATE = 115200
 
 FORWARD_SPEED = 180
