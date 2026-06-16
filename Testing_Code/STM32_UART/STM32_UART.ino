@@ -7,8 +7,8 @@ AlashMotorControlLite motorBL(PWM_PWM, PA6, PA7); // Back-Left
 AlashMotorControlLite motorBR(PWM_PWM, PB0, PB1); // Back-Right
 
 // --- Dropoff Slider Motors (activated at end of match against wall) ---
-AlashMotorControlLite motorDROP1(PWM_PWM, PB4, PB5);
-AlashMotorControlLite motorDROP2(PWM_PWM, PB6, PB7);
+AlashMotorControlLite motorDROP1(PWM_PWM, PB6, PB7);
+AlashMotorControlLite motorDROP2(PWM_PWM, PB8, PB9);
 
 String inputString = "";
 
@@ -26,6 +26,9 @@ void setup() {
   Serial.println("STM32 READY");
   inputString.reserve(32);
   stopAll();
+
+  pinMode(PB3, OUTPUT);
+  digitalWrite(PB3,HIGH);
 }
 
 void loop() {
@@ -54,13 +57,16 @@ void parseCommand(String cmd) {
 
   int separatorIndex = cmd.indexOf(',');
   String action   = (separatorIndex > 0) ? cmd.substring(0, separatorIndex) : cmd;
+  action="FORWARD";
   String valueStr = (separatorIndex > 0) ? cmd.substring(separatorIndex + 1) : "";
 
   if (action == "FORWARD") {
+    Serial.println("FORWARD");
     int speed = valueStr.toInt();
     setMecanum(speed, speed, speed, speed);
   }
   else if (action == "TURN") {
+    Serial.println("TURN");
     int angle = valueStr.toInt();
     int speed = (angle > 0) ? TURN_BASE_SPEED : -TURN_BASE_SPEED;
     // Tank turn: left wheels fwd, right wheels back
@@ -68,14 +74,17 @@ void parseCommand(String cmd) {
   }
   else if (action == "STOP") {
     dropping = false;
+    Serial.println("STOP");
     stopAll();
   }
   else if (action == "COLLECT") {
+    Serial.println("COLLECT");
     // Crawl forward slowly to collect ball
     setMecanum(COLLECT_CRAWL_SPEED, COLLECT_CRAWL_SPEED,
                COLLECT_CRAWL_SPEED, COLLECT_CRAWL_SPEED);
   }
   else if (action == "DROP") {
+    Serial.println("DROP");
     // Stop drive motors, run sliders for 20 seconds non-blocking
     setMecanum(0, 0, 0, 0);
     motorDROP1.setSpeed(DROP_SPEED);
