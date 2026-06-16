@@ -242,7 +242,7 @@ class DecisionNode(Node):
                     return
                 
                 if self.match_finished:
-                    self.send('TURN,180')
+                    self.send('DROP')
                     self.state = self.STATE_FINISHED
                 else:
                     self.state = self.STATE_SEARCH
