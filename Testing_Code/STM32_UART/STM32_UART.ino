@@ -57,8 +57,9 @@ void parseCommand(String cmd) {
 
   int separatorIndex = cmd.indexOf(',');
   String action   = (separatorIndex > 0) ? cmd.substring(0, separatorIndex) : cmd;
-  action="FORWARD";
+  action="DROP";
   String valueStr = (separatorIndex > 0) ? cmd.substring(separatorIndex + 1) : "";
+  valueStr=100;
 
   if (action == "FORWARD") {
     Serial.println("FORWARD");
