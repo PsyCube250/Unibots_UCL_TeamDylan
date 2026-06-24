@@ -2,6 +2,12 @@
 unibots_ws/build/
 unibots_ws/install/
 unibots_ws/log/
+build/
+install/
+log/
+logs/
+run/
+backups/
 
 # Model files
 *.pt
@@ -12,7 +18,18 @@ unibots_ws/log/
 __pycache__/
 *.pyc
 venv/
+.venv/
+.pytest_cache/
 
 # Misc
+.DS_Store
 *.jpg
 *.png
+*.log
+*~
+
+# PlatformIO / editor state
+.pio/
+**/.pio/
+.vscode/
+**/.vscode/
