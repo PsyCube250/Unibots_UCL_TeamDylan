@@ -58,7 +58,7 @@ const uint8_t ENC_B[4] = {PB11, PB13, PB15, PA5};
 // Runtime-adjustable signs avoid reflashing during bring-up.
 // Use -1 if a wheel/encoder is reversed.
 int8_t encoderSign[4] = {1, 1, 1, 1};
-int8_t motorSign[4] = {1, 1, 1, 1};
+int8_t motorSign[4] = {1, -1, 1, -1};
 
 const uint32_t BAUD_RATE = 115200;
 const uint8_t STATUS_LED_PIN = PC13;
