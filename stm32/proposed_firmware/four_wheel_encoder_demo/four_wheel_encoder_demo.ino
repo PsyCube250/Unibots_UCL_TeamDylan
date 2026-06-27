@@ -65,8 +65,8 @@ const uint8_t STATUS_LED_PIN = PC13;
 const uint16_t WATCHDOG_MS = 500;
 const uint16_t CONTROL_PERIOD_MS = 50;
 const uint16_t DEFAULT_TELEM_PERIOD_MS = 100;
-const int HARD_PWM_LIMIT = 45;
-const int STARTUP_PWM_LIMIT = 15;
+const int HARD_PWM_LIMIT = 80;
+const int STARTUP_PWM_LIMIT = 60;
 
 enum ControlMode : uint8_t {
   MODE_STOP = 0,

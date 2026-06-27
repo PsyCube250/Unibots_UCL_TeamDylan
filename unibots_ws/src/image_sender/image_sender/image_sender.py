@@ -16,7 +16,7 @@ class CameraPublisher(Node):
         self.publisher = self.create_publisher(Image, '/img', 10)
         self.bridge    = CvBridge()
 
-        self.cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+        self.cap = cv2.VideoCapture('/dev/video0', cv2.CAP_V4L2)
         self.cap.set(cv2.CAP_PROP_FOURCC,          cv2.VideoWriter_fourcc(*'MJPG'))
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH,     WIDTH)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT,    HEIGHT)
