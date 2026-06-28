@@ -15,7 +15,7 @@ setup(
     zip_safe=True,
     maintainer='jetson',
     maintainer_email='ksmxkaicsoc@gmail.com',
-    description='TODO: Package description',
+    description='YOLO and colour-filtered ping-pong ball detector for Unibots',
     license='TODO: License declaration',
     extras_require={
         'test': [
@@ -24,7 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-        "ball_detector = ball_detector.ball_detector:main"
+            'ball_detector = ball_detector.ball_detector:main',
         ],
     },
 )

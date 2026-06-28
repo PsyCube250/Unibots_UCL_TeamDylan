@@ -1,5 +1,13 @@
 # Changes — 2026-06-27
 
+## 2026-06-28 Integration Note
+
+The post-pull integrated ROS2 path now uses `image_sender` for `/img` and
+`ball_detector` for YOLO class-32 plus white/orange/yellow colour and shape
+filtering. The standalone direct-camera notes below are useful history, but
+for current ROS2 testing run `ros2 run image_sender image_sender` and
+`ros2 run ball_detector ball_detector`.
+
 ## Motor Direction Fix
 
 Tested all four motors individually via SSH over WiFi to the Jetson.
@@ -77,7 +85,7 @@ the orange/shape filter, it reliably detects only orange ping pong balls.
 # How to Run (for teammates)
 
 ## Prerequisites
-- SSH access to Jetson: `ssh jetson@192.168.0.237` (password: `JetsonOrin1`)
+- SSH access to Jetson: `ssh jetson@192.168.0.237`
 - Jetson must be on WiFi network `VM4706224`
 - USB hub connected with camera + LiDAR
 

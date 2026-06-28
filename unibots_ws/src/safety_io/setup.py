@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'decision_maker'
+package_name = 'safety_io'
 
 setup(
     name=package_name,
@@ -15,7 +15,7 @@ setup(
     zip_safe=True,
     maintainer='jetson',
     maintainer_email='ksmxkaicsoc@gmail.com',
-    description='Safety-gated mission controller for Unibots ball collection and docking',
+    description='Jetson GPIO pause switch and red/green LED publisher for Unibots',
     license='TODO: License declaration',
     extras_require={
         'test': [
@@ -24,7 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'decision_maker = decision_maker.decision_maker:main',
+            'safety_io = safety_io.safety_io:main',
         ],
     },
 )

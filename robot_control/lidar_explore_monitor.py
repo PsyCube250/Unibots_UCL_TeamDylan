@@ -30,6 +30,7 @@ from lidar_motor_dry_run import (
     parse_points,
     sector_stats,
 )
+from jetson_safety_imu import add_safety_imu_args, open_imu, open_safety_io
 
 STM32_PORT = os.environ.get("UNIBOTS_STM32_PORT", "/dev/ttyTHS1")
 STM32_BAUD = 115200
@@ -178,13 +179,18 @@ INDEX_HTML = """<!doctype html>
       <dt>Rear</dt><dd id="rear">--</dd>
       <dt>PWM</dt><dd id="pwm">--</dd>
       <dt>LiDAR age</dt><dd id="age">--</dd>
+      <dt>Kill</dt><dd id="kill">--</dd>
+      <dt>LED</dt><dd id="led">--</dd>
+      <dt>IMU</dt><dd id="imu">--</dd>
+      <dt>Yaw</dt><dd id="yaw">--</dd>
+      <dt>Gyro Z</dt><dd id="gyroZ">--</dd>
       <dt>Last STOP</dt><dd id="lastStop">--</dd>
     </dl>
   </aside>
   <script>
     const canvas = document.getElementById("scan");
     const ctx = canvas.getContext("2d");
-    const ids = ["mode", "runtime", "points", "triad", "front", "frontLeft", "frontRight", "left", "right", "rear", "pwm", "age", "lastStop"];
+    const ids = ["mode", "runtime", "points", "triad", "front", "frontLeft", "frontRight", "left", "right", "rear", "pwm", "age", "kill", "led", "imu", "yaw", "gyroZ", "lastStop"];
     const el = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
     const actionEl = document.getElementById("action");
     const reasonEl = document.getElementById("reason");
@@ -274,6 +280,11 @@ INDEX_HTML = """<!doctype html>
       el.rear.textContent = fmt(s.rear);
       el.pwm.textContent = `[${(data.pwm || []).join(", ")}]`;
       el.age.textContent = fmtMs(data.lidar_age_s);
+      el.kill.textContent = data.kill_active == null ? "--" : (data.kill_active ? "KILL" : "OK");
+      el.led.textContent = data.led || "--";
+      el.imu.textContent = data.imu || "--";
+      el.yaw.textContent = data.imu_yaw_deg == null ? "--" : `${data.imu_yaw_deg.toFixed(1)} deg`;
+      el.gyroZ.textContent = data.imu_gyro_z_rad_s == null ? "--" : `${data.imu_gyro_z_rad_s.toFixed(3)} rad/s`;
       el.lastStop.textContent = data.last_stop || "--";
       const margin = data.front_min_m == null ? 0 : Math.max(0, Math.min(1, data.front_min_m / 0.45));
       fillEl.style.width = `${margin * 100}%`;
@@ -705,6 +716,56 @@ def start_server(shared: SharedState, host: str, port: int) -> ThreadingHTTPServ
     return server
 
 
+def safety_imu_state(safety_snapshot=None, imu_sample=None) -> dict:
+    kill_active = None
+    kill_raw = None
+    safety_io = "disabled"
+    led = "--"
+    if safety_snapshot is not None:
+        safety_io = safety_snapshot.reason
+        if safety_snapshot.enabled:
+            kill_active = safety_snapshot.kill_active
+            kill_raw = safety_snapshot.raw_level
+            led = ("R" if safety_snapshot.red_on else "-") + ("G" if safety_snapshot.green_on else "-")
+
+    imu = "disabled"
+    imu_ok = False
+    imu_yaw_deg = None
+    imu_gyro_z = None
+    imu_age_s = None
+    if imu_sample is not None:
+        imu_ok = imu_sample.ok
+        if imu_sample.enabled:
+            if imu_sample.ok:
+                addr = f"0x{imu_sample.address:02x}" if imu_sample.address is not None else "--"
+                imu = f"{imu_sample.sensor} i2c-{imu_sample.bus}@{addr}"
+            else:
+                imu = imu_sample.reason
+            imu_yaw_deg = round(imu_sample.yaw_deg, 2) if imu_sample.yaw_deg is not None else None
+            imu_gyro_z = round(imu_sample.gyro_z_rad_s, 5) if imu_sample.gyro_z_rad_s is not None else None
+            imu_age_s = round(imu_sample.age_s, 3)
+        else:
+            imu = imu_sample.reason
+
+    return {
+        "kill_active": kill_active,
+        "kill_raw": kill_raw,
+        "safety_io": safety_io,
+        "led": led,
+        "imu": imu,
+        "imu_ok": imu_ok,
+        "imu_yaw_deg": imu_yaw_deg,
+        "imu_gyro_z_rad_s": imu_gyro_z,
+        "imu_age_s": imu_age_s,
+    }
+
+
+def imu_is_unsafe(args: argparse.Namespace, imu_sample) -> bool:
+    if not args.require_imu:
+        return False
+    return (not imu_sample.enabled) or (not imu_sample.ok) or (imu_sample.age_s > args.imu_stale_seconds)
+
+
 def build_snapshot(
     seq: int,
     start_s: float,
@@ -718,6 +779,8 @@ def build_snapshot(
     lidar_age_s: float,
     front_min: Optional[float],
     shared: SharedState,
+    safety_snapshot=None,
+    imu_sample=None,
 ) -> dict:
     robot_points = []
     for raw_angle, dist, _ in points[:5000]:
@@ -742,6 +805,7 @@ def build_snapshot(
         "reason": reason,
         "lidar_age_s": round(lidar_age_s, 3),
         "last_stop": shared.last_stop_reason,
+        **safety_imu_state(safety_snapshot, imu_sample),
     }
 
 
@@ -769,15 +833,23 @@ def run(args: argparse.Namespace) -> int:
 
     lidar: Optional[serial.Serial] = None
     stm: Optional[serial.Serial] = None
+    safety_io = None
+    imu_reader = None
     mem = ControlMemory(action="STOP", action_since_s=time.monotonic(), last_wander_s=time.monotonic())
     seq = 0
     start_s = time.monotonic()
 
     try:
+        safety_io = open_safety_io(args, live)
+        imu_reader = open_imu(args, live)
         lidar = serial.Serial(args.lidar_port, args.lidar_baud, timeout=0.03)
         stm = serial.Serial(args.stm32_port, args.stm32_baud, timeout=0.08)
         preflight_stm32(stm, args)
         if live:
+            initial_safety = safety_io.read()
+            safety_io.update_leds(kill=initial_safety.kill_active, running=False)
+            if initial_safety.enabled and initial_safety.kill_active:
+                raise RuntimeError("Kill switch is active before enabling motors")
             send_line(stm, "ENABLE 1")
             drain_lines(stm, 0.25)
             print("LIVE motors enabled. Browser STOP or Ctrl-C stops.")
@@ -793,6 +865,8 @@ def run(args: argparse.Namespace) -> int:
             if raw_points:
                 mem.last_lidar_s = now
             lidar_age_s = now - mem.last_lidar_s if mem.last_lidar_s else 999.0
+            safety_snapshot = safety_io.read()
+            imu_sample = imu_reader.read()
             points = filter_points(raw_points, args.front_center, args.ignore_raw_arc, args.ignore_robot_arc)
 
             stats = {
@@ -811,12 +885,31 @@ def run(args: argparse.Namespace) -> int:
             ))
             front_min = min_present((front_guard, front_decision))
             action, pwm, reason = decide(stats, mem, args, now, lidar_age_s)
+            forced_live_stop = False
+            if safety_snapshot.enabled and safety_snapshot.kill_active:
+                action, pwm, reason = "STOP", [0, 0, 0, 0], "kill switch active"
+                shared.last_stop_reason = reason
+                forced_live_stop = live
+            elif imu_is_unsafe(args, imu_sample):
+                action, pwm, reason = "STOP", [0, 0, 0, 0], f"imu unsafe: {imu_sample.reason}"
+                shared.last_stop_reason = reason
+                forced_live_stop = live
+
             if action != mem.action:
                 mem.action = action
                 mem.action_since_s = now
-            if now - mem.last_command_s >= args.command_period:
+            if forced_live_stop:
+                send_motion(stm, "STOP", [0, 0, 0, 0], live)
+                mem.last_command_s = now
+            elif now - mem.last_command_s >= args.command_period:
                 send_motion(stm, action, pwm, live)
                 mem.last_command_s = now
+
+            safety_snapshot = safety_io.update_leds(
+                kill=safety_snapshot.enabled and safety_snapshot.kill_active,
+                running=action != "STOP",
+                warning=action == "STOP" or (imu_sample.enabled and not imu_sample.ok),
+            )
 
             seq += 1
             shared.update(build_snapshot(
@@ -832,12 +925,16 @@ def run(args: argparse.Namespace) -> int:
                 lidar_age_s,
                 front_min,
                 shared,
+                safety_snapshot,
+                imu_sample,
             ))
             print(
                 f"t={time.monotonic() - start_s:05.2f}s front_min={front_min if front_min is not None else -1:.3f} "
                 f"action={action} pwm={pwm} {reason}",
                 flush=True,
             )
+            if forced_live_stop:
+                shared.stop_event.set()
             time.sleep(args.loop_sleep)
 
     except KeyboardInterrupt:
@@ -849,6 +946,10 @@ def run(args: argparse.Namespace) -> int:
             stm.close()
         if lidar is not None:
             lidar.close()
+        if safety_io is not None:
+            safety_io.close()
+        if imu_reader is not None:
+            imu_reader.close()
         shared.last_stop_reason = shared.last_stop_reason or "program exit"
         data = shared.data()
         data["action"] = "STOP"
@@ -922,6 +1023,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--wander-turn-seconds", type=float, default=0.35)
     parser.add_argument("--ignore-raw-arc", action="append", type=parse_angle_arc, default=[])
     parser.add_argument("--ignore-robot-arc", action="append", type=parse_angle_arc, default=[])
+    add_safety_imu_args(parser)
     parser.add_argument("--live-motors", action="store_true")
     parser.add_argument("--ground-test", action="store_true")
     return parser

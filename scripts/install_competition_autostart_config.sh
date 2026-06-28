@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CONFIG_FILE="${UNIBOTS_CONFIG_FILE:-/etc/default/unibots-main}"
+TMP_FILE="$(mktemp)"
+
+cleanup() {
+  rm -f "$TMP_FILE"
+}
+trap cleanup EXIT
+
+cat > "$TMP_FILE" <<'EOF'
+# Unibots competition autostart config.
+# Power-on behavior: systemd starts scripts/unibots_main_boot.sh automatically.
+UNIBOTS_AUTOSTART_ENABLED=1
+UNIBOTS_MAIN_MODE=ros2
+
+# Live competition mode. Both must be 1 for STM32 motor commands.
+UNIBOTS_ROS_LIVE_MOTORS=1
+UNIBOTS_ROS_GROUND_TEST=1
+UNIBOTS_MISSION_TIMEOUT_S=180.0
+UNIBOTS_TARGET_COUNT=3
+
+# Software safety button is required for final arena runs.
+UNIBOTS_ENABLE_GPIO_SAFETY=1
+UNIBOTS_REQUIRE_GPIO_SAFETY=1
+UNIBOTS_START_PAUSED=1
+UNIBOTS_BUTTON_BACKEND=modulino_i2c
+UNIBOTS_MODULINO_I2C_BUS=7
+UNIBOTS_MODULINO_I2C_ADDRESS=62
+UNIBOTS_MODULINO_BUTTON_INDEX=0
+UNIBOTS_KILL_BUTTON_PIN=7
+UNIBOTS_KILL_BUTTON_ACTIVE_LOW=0
+UNIBOTS_RED_LED_PIN=29
+UNIBOTS_GREEN_LED_PIN=31
+UNIBOTS_LED_ACTIVE_LOW=0
+
+# Hardware ports and startup waits.
+UNIBOTS_CAMERA=/dev/video0
+UNIBOTS_CAMERA_INDEX=0
+UNIBOTS_CAMERA_WIDTH=320
+UNIBOTS_CAMERA_HEIGHT=240
+UNIBOTS_CAMERA_FPS=20
+UNIBOTS_CAMERA_ROTATE_180=1
+UNIBOTS_STM32_PORT=/dev/ttyTHS1
+UNIBOTS_LIDAR_PORT=/dev/ttyUSB0
+UNIBOTS_DEVICE_WAIT_S=25
+UNIBOTS_FRONT_CENTER=270.0
+UNIBOTS_LIDAR_STALE_S=0.60
+UNIBOTS_LIDAR_MAX_RANGE_M=2.50
+
+# Orange ping-pong balls only; steel bearings/white floor should be ignored.
+UNIBOTS_YOLO_DEVICE=cuda
+UNIBOTS_YOLO_HALF=1
+UNIBOTS_YOLO_IMGSZ=320
+UNIBOTS_YOLO_CONF=0.005
+UNIBOTS_BALL_COLOURS=orange
+UNIBOTS_FALLBACK_BALL_COLOURS=orange
+UNIBOTS_ENABLE_COLOR_FALLBACK=true
+UNIBOTS_REQUIRE_BALL_COLOR=1
+UNIBOTS_MIN_COLOR_RATIO=0.012
+UNIBOTS_YOLO_MIN_DIAMETER_PX=2.5
+UNIBOTS_YOLO_MAX_DIAMETER_PX=160.0
+UNIBOTS_YOLO_MIN_ASPECT=0.30
+UNIBOTS_YOLO_MAX_ASPECT=3.20
+
+# Movement tuning from bench/ground tests.
+UNIBOTS_PWM_LIMIT=80
+UNIBOTS_APPROACH_PWM=60
+UNIBOTS_CREEP_PWM=50
+UNIBOTS_COLLECT_DRIVE_PWM=45
+UNIBOTS_TURN_PWM=60
+UNIBOTS_SEARCH_PWM=60
+UNIBOTS_STEP_SPIN_ANGLE_DEG=70.0
+
+# Home docking and gate release.
+UNIBOTS_HOME_TAG_IDS=20,21
+UNIBOTS_HOME_TAG_SIZE_M=0.10
+UNIBOTS_RELEASE_GATE_AFTER_DOCK=1
+UNIBOTS_RELEASE_LIVE_SERVO=1
+UNIBOTS_RELEASE_SERVO_PINS=32,33
+UNIBOTS_RELEASE_SERVO_HOME_US=1500
+UNIBOTS_RELEASE_SERVO_OPEN_US=2000
+UNIBOTS_RELEASE_SERVO_OPEN_HOLD_S=7.0
+
+# Browser monitor remains available during testing/practice when network exists.
+UNIBOTS_HTTP_PORT=8770
+EOF
+
+if [ -f "$CONFIG_FILE" ]; then
+  sudo cp "$CONFIG_FILE" "${CONFIG_FILE}.bak.$(date +%Y%m%d_%H%M%S)"
+fi
+sudo install -m 0644 "$TMP_FILE" "$CONFIG_FILE"
+sudo systemctl daemon-reload
+sudo systemctl enable unibots-main.service
+
+echo "Installed competition autostart config:"
+grep -E '^(UNIBOTS_AUTOSTART_ENABLED|UNIBOTS_ROS_LIVE_MOTORS|UNIBOTS_ROS_GROUND_TEST|UNIBOTS_MISSION_TIMEOUT_S|UNIBOTS_TARGET_COUNT|UNIBOTS_RELEASE_LIVE_SERVO|UNIBOTS_ENABLE_GPIO_SAFETY|UNIBOTS_BALL_COLOURS|UNIBOTS_STEP_SPIN_ANGLE_DEG)=' "$CONFIG_FILE"
+echo
+systemctl is-enabled unibots-main.service | sed 's/^/service enabled: /'
+systemctl is-active unibots-main.service | sed 's/^/service active: /' || true
+echo
+echo "This does not start the robot immediately. It will run after the next boot/power cycle."

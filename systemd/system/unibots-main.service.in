@@ -1,0 +1,21 @@
+[Unit]
+Description=Unibots main ping-pong tracker
+After=multi-user.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=@RUN_USER@
+WorkingDirectory=@REPO_DIR@
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/etc/default/unibots-main
+ExecCondition=/bin/sh -c '[ "$${UNIBOTS_AUTOSTART_ENABLED:-0}" = "1" ]'
+ExecStart=@REPO_DIR@/scripts/unibots_main_boot.sh
+ExecStopPost=@REPO_DIR@/scripts/unibots_main_stop.sh
+KillSignal=SIGINT
+TimeoutStopSec=10
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

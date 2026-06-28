@@ -15,7 +15,7 @@ setup(
     zip_safe=True,
     maintainer='jetson',
     maintainer_email='ksmxkaicsoc@gmail.com',
-    description='TODO: Package description',
+    description='LiDAR sector and obstacle publisher for Unibots safety logic',
     license='TODO: License declaration',
     extras_require={
         'test': [
@@ -24,7 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-        "lidar_scan = lidar.stl27l:main"
+            'lidar_scan = lidar.stl27l:main',
         ],
     },
 )

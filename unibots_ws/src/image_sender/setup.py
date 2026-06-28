@@ -15,7 +15,7 @@ setup(
     zip_safe=True,
     maintainer='jetson',
     maintainer_email='ksmxkaicsoc@gmail.com',
-    description='TODO: Package description',
+    description='V4L2 camera publisher for Unibots vision nodes',
     license='TODO: License declaration',
     extras_require={
         'test': [
@@ -24,7 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-        "image_sender = image_sender.image_sender:main"
+            'image_sender = image_sender.image_sender:main',
         ],
     },
 )

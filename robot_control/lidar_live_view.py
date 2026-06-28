@@ -281,7 +281,7 @@ def parse_points(raw: bytes) -> list[tuple[float, float, int]]:
 
 
 def robot_angle(raw_angle: float, front_center: float) -> float:
-    return (raw_angle - front_center) % 360.0
+    return (front_center - raw_angle) % 360.0
 
 
 def in_arc(angle: float, center: float, half_width: float) -> bool:
